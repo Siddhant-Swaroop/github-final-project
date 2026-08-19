@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Simple Interest Calculator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: #0f172a;
+      color: #f8fafc;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+    }
+
+    .calculator {
+      background: #1e293b;
+      width: 100%;
+      max-width: 480px;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      border: 1px solid #334155;
+    }
+
+    h2 {
+      margin-bottom: 24px;
+      font-size: 1.4rem;
+      text-align: center;
+      color: #38bdf8;
+    }
+
+    .control-group {
+      margin-bottom: 20px;
+    }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    label {
+      font-size: 0.9rem;
+      color: #94a3b8;
+      font-weight: 500;
+    }
+
+    .value-display {
+      font-weight: 700;
+      color: #38bdf8;
+      font-size: 1rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      border-radius: 4px;
+      background: #475569;
+      outline: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #38bdf8;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+      transition: transform 0.1s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid #334155;
+    }
+
+    .result-card {
+      background: #0f172a;
+      padding: 16px;
+      border-radius: 10px;
+      text-align: center;
+      border: 1px solid #334155;
+    }
+
+    .result-card span {
+      display: block;
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+
+    .result-card strong {
+      font-size: 1.25rem;
+      color: #f8fafc;
+    }
+
+    .result-card.highlight strong {
+      color: #4ade80;
+    }
+
+    .breakdown-box {
+      margin-top: 16px;
+      padding: 12px;
+      background: #0f172a;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      color: #94a3b8;
+      line-height: 1.5;
+      border-left: 3px solid #38bdf8;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="calculator">
+    <h2>Interactive Interest Calculator</h2>
+
+    <!-- Principal Slider -->
+    <div class="control-group">
+      <div class="label-row">
+        <label for="principal">Principal Amount</label>
+        <span class="value-display" id="principal-val">$10,000</span>
+      </div>
+      <input type="range" id="principal" min="500" max="100000" step="500" value="10000">
+    </div>
+
+    <!-- Rate Slider -->
+    <div class="control-group">
+      <div class="label-row">
+        <label for="rate">Interest Rate</label>
+        <span class="value-display" id="rate-val">6.5%</span>
+      </div>
+      <input type="range" id="rate" min="0.5" max="20" step="0.1" value="6.5">
+    </div>
+
+    <!-- Time Slider -->
+    <div class="control-group">
+      <div class="label-row">
+        <label for="time">Time Period</label>
+        <span class="value-display" id="time-val">3 Years</span>
+      </div>
+      <input type="range" id="time" min="1" max="30" step="1" value="3">
+    </div>
+
+    <!-- Output Displays -->
+    <div class="results-grid">
+      <div class="result-card">
+        <span>Total Interest</span>
+        <strong id="interest-res">$0</strong>
+      </div>
+      <div class="result-card highlight">
+        <span>Final Maturity</span>
+        <strong id="total-res">$0</strong>
+      </div>
+    </div>
+
+    <!-- Dynamic Insight Note -->
+    <div class="breakdown-box" id="insight-text">
+      Adjust the sliders above to see real-time updates.
+    </div>
+  </div>
+
+  <script>
+    // DOM Elements
+    const principalSlider = document.getElementById('principal');
+    const rateSlider = document.getElementById('rate');
+    const timeSlider = document.getElementById('time');
+
+    const principalVal = document.getElementById('principal-val');
+    const rateVal = document.getElementById('rate-val');
+    const timeVal = document.getElementById('time-val');
+
+    const interestRes = document.getElementById('interest-res');
+    const totalRes = document.getElementById('total-res');
+    const insightText = document.getElementById('insight-text');
+
+    // Currency Formatter
+    const currency = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0
+    });
+
+    // Dynamic Calculation & UI Update
+    function updateCalculator() {
+      const p = parseFloat(principalSlider.value);
+      const r = parseFloat(rateSlider.value);
+      const t = parseFloat(timeSlider.value);
+
+      // Simple Interest Formula: SI = (P * R * T) / 100
+      const interest = (p * r * t) / 100;
+      const total = p + interest;
+      const yearlyGain = interest / t;
+
+      // Update Labels
+      principalVal.textContent = currency.format(p);
+      rateVal.textContent = `${r.toFixed(1)}%`;
+      timeVal.textContent = `${t} ${t === 1 ? 'Year' : 'Years'}`;
+
+      // Update Result Cards
+      interestRes.textContent = currency.format(interest);
+      totalRes.textContent = currency.format(total);
+
+      // Real-time Summary
+      insightText.innerHTML = `Earning approximately <strong>${currency.format(yearlyGain)}</strong> in interest per year across <strong>${t} years</strong>.`;
+    }
+
+    // Attach event listeners for real-time slider updates
+    [principalSlider, rateSlider, timeSlider].forEach(slider => {
+      slider.addEventListener('input', updateCalculator);
+    });
+
+    // Run on initial load
+    updateCalculator();
+  </script>
+</body>
+</html>
